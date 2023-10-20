@@ -6,20 +6,13 @@ import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
-import com.kauailabs.navx.frc.AHRS;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 import frc.robot.Constants;
 import frc.robot.loops.ILooper;
 import frc.robot.loops.Loop;
-//import com.team3478.frc2023.subsystems.StateManager.GlobalState;
-//import com.team3478.lib.drivers.TalonUtil;
-//import com.team3478.lib.geometry.Pose2d;
-//import com.team3478.lib.geometry.Rotation2d;
-//import com.team3478.lib.geometry.Translation2d;
-//import com.team3478.lib.swerve.ChassisSpeeds;
-//import com.team3478.lib.swerve.SwerveDriveKinematics;
-//import com.team3478.lib.swerve.SwerveDriveOdometry;
-//import com.team3478.lib.swerve.SwerveModuleState;
-//import com.team3478.lib.util.MotorUtil;
 import frc.robot.util.ReflectingCSVWriter;
 import frc.robot.util.util1;
 
@@ -42,6 +35,14 @@ public class temple_subsystem extends Subsystem{
     }
 
     //HardWare
+    CANSparkMax motor1;
+    CANSparkMax motor2;
+    CANSparkMax motor3;
+    RelativeEncoder encoderm1;
+    RelativeEncoder encoderm2;
+    RelativeEncoder encoderm3;
+    MotorType tipo;
+    
 
     public static enum State{
         IDLE,
@@ -52,7 +53,9 @@ public class temple_subsystem extends Subsystem{
         PathPlannerDriving
     }
     // VARIABLES SUBSISTEMAS
-    
+    double getBusVoltage = 0;
+    double getMotorTemperature = 0;
+    double getVelocity = 0;
 
     //VARIABLES DEL WRITER
     public PeriodicIO mPeriodicIO; //para almacenar los inputs/outputs del subsistema
@@ -62,8 +65,25 @@ public class temple_subsystem extends Subsystem{
 
     //declarar las variables con los inputs/outputs default del subsistema
     public static class PeriodicIO {
+        double timestamp;
+        double deltaTime;
+
         // INPUTS
-        
+        double posenconder1;
+        double posenconder2;
+        double posenconder3;
+
+        double getTemperature1;
+        double getTemperature2;
+        double getTemperature3;
+
+        double getBusVoltage1;
+        double getBusVoltage2;
+        double getBusVoltage3;
+
+        double getVelocity1;
+        double getVelocity2;
+        double getVelocity3;
         
 
         // OUTPUTS
@@ -81,7 +101,14 @@ public class temple_subsystem extends Subsystem{
         //PONER VARIABLES
         
         //PONER HARDWARE
-        
+        motor1 = new CANSparkMax(1, MotorType.kBrushless);
+        motor2 = new CANSparkMax(2, MotorType.kBrushless);
+        motor3 = new CANSparkMax(3, MotorType.kBrushless);
+
+        encoderm1 = motor1.getEncoder();
+        encoderm2 = motor2.getEncoder();
+        encoderm3 = motor3.getEncoder();
+
         //Get Sensors
         
         //CONFIGURACIONES
@@ -90,9 +117,26 @@ public class temple_subsystem extends Subsystem{
 
     //metodo para leer los inputs (sensores, encoders..)
     public void readPeriodicInputs() {
+
+        mPeriodicIO.getTemperature1 = motor1.getMotorTemperature();       
+        mPeriodicIO.getTemperature2 = motor2.getMotorTemperature();
+        mPeriodicIO.getTemperature3 = motor3.getMotorTemperature();
+
+        mPeriodicIO.posenconder1 = encoderm1.getPosition();
+        mPeriodicIO.posenconder1 = encoderm2.getPosition();
+        mPeriodicIO.posenconder1 = encoderm3.getPosition();
+
+        mPeriodicIO.getBusVoltage1 = motor1.getBusVoltage();
+        mPeriodicIO.getBusVoltage1 = motor2.getBusVoltage();
+        mPeriodicIO.getBusVoltage1 = motor3.getBusVoltage();
+
+        mPeriodicIO.getVelocity1 = ((RelativeEncoder) motor1).getVelocity();
+        mPeriodicIO.getVelocity2 = ((RelativeEncoder) motor1).getVelocity();
+        mPeriodicIO.getVelocity3 = ((RelativeEncoder) motor1).getVelocity();
+
         //LECTURA DE TIMESTAMP 
-            //mPeriodicIO.timestamp = Timer.getFPGATimestamp();
-            //mPeriodicIO.deltaTime = Timer.getFPGATimestamp() - mPeriodicIO.timestamp;
+        mPeriodicIO.timestamp = Timer.getFPGATimestamp();
+        mPeriodicIO.deltaTime = Timer.getFPGATimestamp() - mPeriodicIO.timestamp;
         
         //LECTURA DEL HARDWARE Y SENSORES
         
@@ -111,12 +155,37 @@ public class temple_subsystem extends Subsystem{
 
     public void registerEnabledLoops(ILooper in) {
 
-            //metodo para registrar los loops del subsistema, las acciones al inicio, durante y final del teleop
+        in.register(new Loop() {
+            @Override
+            public void onStart(double timestamp) {
+                synchronized (temple_subsystem.this) {
+                    if( isLogging ) startLogging();
+
+                    //Funciones que llamamos al inicio del loop
+            
+                }
+            }
+
+            @Override
+            public void onLoop(double timestamp) {
+                if(isLogging && mCSVWriter != null) mCSVWriter.add(mPeriodicIO);
+
+                //FUNCIONES QUE LLAMAS EN LOOP
+
+            }
+
+            @Override
+            public void onStop(double timestamp) {
+                stop();
+                if( isLogging ) stopLogging();
+                //NO LLEVA FUNCIONES 
+            }
+        });
 
     }
 
     public void zeroSensors() {
-        //reset sensors
+        //ESTA VACIO
     }
 
     //Iniciar a declarar funciones del subsistema------------------------------------------------------------    
@@ -185,7 +254,7 @@ public class temple_subsystem extends Subsystem{
     }
 
     private double StickToVelocity(double stickInput){
-        
+        return 0;
         // RETURN STICKYVELOCITY
         
     }
@@ -205,7 +274,7 @@ public class temple_subsystem extends Subsystem{
     }  
 
     public double Limit360Angle(double _angle){
-        
+        return 0;
             //Funcion que limita el angulo de 0 a 360
 
     }
@@ -228,11 +297,11 @@ public class temple_subsystem extends Subsystem{
         
     }
 
-    public State GetSwerveState(){
+    /*public State GetSwerveState(){
 
         //FUNCION PARA GetSwerveState
        
-    }
+    }*/
 
     public void SetBrakeMode(boolean enabled){
 
@@ -268,4 +337,5 @@ public class temple_subsystem extends Subsystem{
     public void outputTelemetry(){
        //WRITER OF OUTPUTS
         //WRITE OUTPUTS}
+}
 }
